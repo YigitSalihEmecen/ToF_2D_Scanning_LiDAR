@@ -1,93 +1,172 @@
-# DIY LiDAR System
+# DIY LiDAR System with ESP8266 Integration
 
-A graduation project for creating a low-cost, DIY Light Detection and Ranging (LiDAR) system using Arduino and Python.
+A graduation project that implements a low-cost, DIY Light Detection and Ranging (LiDAR) system using Arduino, ESP8266, and Python. This system provides real-time 2D point cloud visualization of surroundings, making it suitable for robotics, mapping, and educational purposes.
 
 ## Project Overview
 
-This project implements a homemade LiDAR system that uses a TF-Luna distance sensor mounted on a rotating platform to create a 2D point cloud visualization of surroundings. The system captures distance data at various angles as the sensor rotates, enabling mapping of the environment within a 3-meter radius.
+This project creates a homemade LiDAR system that combines:
+- A TF-Luna distance sensor for accurate distance measurements
+- A rotating platform driven by a DC motor for 360-degree scanning
+- Hall effect sensor for precise rotation tracking
+- ESP8266 for wireless data transmission
+- Real-time visualization software in Python
+
+The system can map environments within a 3-meter radius and transmits data wirelessly over UDP, making it suitable for mobile robotics applications.
 
 ## Repository Structure
 
-- **Arduino/** - Contains the firmware for the microcontroller
-  - **Read_Send/Read_Send.ino** - Arduino code that controls the motor and reads/transmits sensor data
+```
+Grad_Project/
+├── 3D_models/               # 3D printable components
+│   ├── Belt_Route_for_Head.stl  # Belt routing mechanism
+│   ├── Bottom.stl               # Base component
+│   ├── Case.stl                # Main enclosure
+│   └── Spinning_Head.stl       # Rotating sensor mount
+├── Arduino/                 # Microcontroller firmware
+│   └── Read_Send/
+│       └── Read_Send.ino   # Main Arduino code for sensor control
+├── Python/                 # Visualization software
+│   ├── esp8266.py         # UDP-based data visualization
+│   └── backup/            # Backup of previous versions
+└── Documents/             # Project documentation
+    └── ENG402-Graduation_Project_Report_Yigit_Salih_Emecen.pdf
+```
+
+## Technical Specifications
+
+### Hardware Components
+- **Distance Sensor**: TF-Luna I2C LiDAR sensor
+  - Range: 0.2m to 8m
+  - Update Rate: 240Hz
+  - Interface: I2C
+- **Motion System**:
+  - DC Motor with PWM control
+  - Hall effect sensor for rotation tracking
+  - Maximum RPM: ~600 (limited by debounce)
+- **Communication**:
+  - ESP8266 for wireless data transmission
+  - UDP protocol for real-time data streaming
+- **Physical Build**:
+  - 3D printed components for durability
+  - Belt-driven rotation system
+  - Compact case design
+
+### Software Features
+- **Arduino Firmware**:
+  - High-speed I2C communication (240Hz)
+  - Precise RPM calculation
+  - Debounced hall effect sensing
+  - Configurable motor speed via PWM
   
-- **Python/** - Contains visualization software
-  - **simple_lidar.py** - Minimalist Python script for visualizing LiDAR data in real-time
-  - **py_serial.py** - (Empty in current version, but backup contains a more complex GUI version)
-  
-- **3D_models/** - Contains 3D printable models for physical components
-  - **Body.3mf** - Main housing for the LiDAR system
-  - **MotorGear.3mf** - Gear for the motor
-  - **Spinning_Head.3mf** - Rotating head that holds the sensor
-  
-- **Documents/** - Project documentation
-  - **ENG402-Graduation_Project_Report_Yigit_Salih_Emecen.pdf** - Detailed project report
-
-## Hardware Requirements
-
-- Arduino board (e.g., Arduino Uno/Nano)
-- TF-Luna I2C LiDAR sensor
-- Hall effect sensor
-- DC motor
-- Motor driver
-- 3D printed components (files provided in 3D_models folder)
-- Appropriate power supply
-
-## Software Requirements
-
-- Arduino IDE
-- Python 3.x with the following libraries:
-  - matplotlib
-  - numpy
-  - pyserial
+- **Python Visualization**:
+  - Real-time point cloud display
+  - UDP socket communication
+  - Dynamic plot updates
+  - Configurable display parameters
+  - Point history tracking (up to 200 points)
 
 ## Setup Instructions
 
-1. **3D Print the Components**:
-   - Print all files in the `3D_models` folder using appropriate materials
+### Hardware Assembly
+1. **3D Printing**:
+   - Print all STL files from the `3D_models` directory
+   - Recommended settings:
+     - Layer height: 0.2mm
+     - Infill: 20% minimum
+     - Support: Required for overhangs
 
-2. **Assemble the Hardware**:
-   - Mount the TF-Luna sensor on the spinning head
-   - Attach the motor gear to the DC motor
-   - Install the Hall effect sensor at the reference position
-   - Connect all components according to the pin configuration in the Arduino code
+2. **Component Assembly**:
+   - Mount the TF-Luna sensor on the `Spinning_Head`
+   - Install the hall effect sensor on the `Bottom` component
+   - Route the timing belt using the `Belt_Route_for_Head`
+   - Enclose electronics in the `Case`
 
-3. **Upload Arduino Code**:
-   - Open `Arduino/Read_Send/Read_Send.ino` in the Arduino IDE
-   - Connect your Arduino board
-   - Upload the code to the board
+3. **Wiring**:
+   ```
+   Arduino:
+   - Hall Sensor → Pin 2
+   - Motor Pin 1 → Pin 9 (PWM)
+   - Motor Pin 2 → Pin 10
+   - TF-Luna:
+     - SDA → Arduino SDA
+     - SCL → Arduino SCL
+   ```
 
-4. **Run the Visualization Software**:
-   - Install required Python libraries: `pip install matplotlib numpy pyserial`
-   - Run `python Python/simple_lidar.py`
-   - The software will automatically detect the connected LiDAR device and display the visualization
+### Software Setup
+
+1. **Arduino Environment**:
+   ```bash
+   # Required Libraries
+   - Wire (built-in)
+   - TFLI2C (TF-Luna I2C Library)
+   ```
+
+2. **Python Environment**:
+   ```bash
+   # Install required packages
+   pip install numpy matplotlib socket
+   ```
+
+3. **Configuration**:
+   - Set UDP_PORT in `esp8266.py` (default: 12345)
+   - Adjust MAX_POINTS for visualization (default: 200)
+   - Motor speed can be modified in Arduino code (PWM value)
 
 ## Usage
 
-Once everything is set up, the system will start collecting distance data and visualizing it in real-time. The visualization shows:
+1. **Start the System**:
+   ```bash
+   # Run the visualization software
+   python Python/esp8266.py
+   ```
 
-- Points detected by the LiDAR sensor within a 3-meter radius
-- Current rotation speed (RPM) in the window title
-- Reference circles at 1m and 2m distances
+2. **Data Format**:
+   The system transmits UDP packets containing:
+   - Distance data: "D: [value]"
+   - Angle data: "A: [value]"
+   - Each measurement includes both distance (mm) and angle (degrees)
 
-To exit the visualization, press Ctrl+C in the terminal.
+3. **Visualization**:
+   - Blue dots represent detected points
+   - Grid shows distance in millimeters
+   - Real-time updates at up to 240Hz
+   - Points persist based on MAX_POINTS setting
 
-## Data Format
+## Performance Optimization
 
-The Arduino code sends data serially in the following format:
-- RPM data: `R:<value>` (e.g., `R:20.5`)
-- Distance data: `D:<value>` (e.g., `D:150`)
+- **Scan Rate**: Adjustable via motor PWM (pin 9)
+- **Update Rate**: Configurable TF-Luna frame rate (default 240Hz)
+- **Point Density**: Modify MAX_POINTS in Python code
+- **Debounce Time**: Adjustable in Arduino code (affects maximum RPM)
 
 ## Troubleshooting
 
-- If the serial port cannot be detected automatically, check the available ports and modify the port name in the Python script
-- Ensure the Arduino is properly connected and the code has been successfully uploaded
-- Check all hardware connections if no data is being received
+1. **No Data Reception**:
+   - Check ESP8266 IP address and port configuration
+   - Verify UDP_PORT matches in both devices
+   - Ensure proper power supply to all components
 
-## License
+2. **Irregular Scanning**:
+   - Check belt tension
+   - Verify hall sensor alignment
+   - Adjust motor speed if needed
 
-This project is open-source and available for educational and personal use.
+3. **Poor Point Cloud Quality**:
+   - Clean sensor lens
+   - Check for mechanical obstructions
+   - Verify sensor mounting alignment
+
+## Future Improvements
+
+- 3D scanning capability by adding vertical motion
+- Web-based visualization interface
+- SLAM integration for mapping
+- Point cloud data recording and playback
 
 ## Author
 
 Yigit Salih Emecen
+
+## License
+
+This project is open-source and available for educational and personal use. See the project report for detailed technical information and methodology.
